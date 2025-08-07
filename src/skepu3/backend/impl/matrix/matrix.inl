@@ -191,16 +191,16 @@ inline Matrix<T>::Matrix(T * const ptr, typename Matrix<T>::size_type _rows, typ
   m_deallocEnabled(deallocEnabled)
 {
   DEBUG_TEXT_LEVEL1("Matrix: Constructor from existing pointer with " << _rows << " x " << _cols << " (total " << this->size() << ") elements");
-  
+
   if (this->m_rows < 1 || this->m_cols < 1)
     SKEPU_ERROR("The matrix size must be positive.");
-  
+
   if (!ptr)
   {
     SKEPU_ERROR("Error: The supplied pointer for initializing matrix object is invalid");
     return;
   }
-  
+
   this->m_data = ptr;
 }
 
@@ -223,7 +223,7 @@ Matrix<T>::Matrix(const Matrix<T>& copy)
    copy.updateHost();
    this->init(copy.m_rows, copy.m_cols);
    std::copy(copy.m_data, copy.m_data + copy.size(), this->m_data);
-   
+
 #ifdef SKEPU_OPENCL
    this->m_transposeKernels_CL = copy.m_transposeKernels_CL;
 #endif
@@ -243,7 +243,7 @@ template<typename T>
 void Matrix<T>::init(size_type _rows, size_type _cols)
 {
   DEBUG_TEXT_LEVEL1("Matrix: Allocating with " << _rows << " x " << _cols << " (total " << this->size() << ") elements");
-  
+
   if (!this->m_data)
   {
     if (_rows * _cols < 1)
@@ -252,7 +252,7 @@ void Matrix<T>::init(size_type _rows, size_type _cols)
     this->m_cols = _cols;
     backend::allocateHostMemory<T>(this->m_data, this->m_rows * this->m_cols);
     this->m_deallocEnabled = true;
-    
+
 #ifdef SKEPU_OPENCL
     this->m_transposeKernels_CL = &(backend::Environment<T>::getInstance()->m_transposeKernels_CL);
 #endif
@@ -274,17 +274,17 @@ template <typename T>
 Matrix<T>::~Matrix()
 {
   this->releaseDeviceAllocations();
-  
+
   if (this->m_transpose_matrix)
     delete this->m_transpose_matrix;
-  
+
   if (this->m_data && this->m_deallocEnabled)
     backend::deallocateHostMemory<T>(this->m_data);
   else
   {
     DEBUG_TEXT_LEVEL1("Matrix: Note, did not deallocate data.");
   }
-  
+
   DEBUG_TEXT_LEVEL1("Matrix: Destroyed with " << this->m_rows << " x " << this->m_cols << " (total " << this->size() << ") elements");
 }
 
@@ -297,7 +297,7 @@ Matrix<T>& Matrix<T>::operator=(const Matrix<T>& other)
 {
    if(*this == other)
       return *this;
-   
+
    other.updateHost();
    invalidateDeviceData();
 
@@ -320,7 +320,7 @@ inline void Matrix<T>::updateHost(bool enable) const
 {
 	if (!enable)
 		return;
-	
+
 #ifdef SKEPU_OPENCL
    updateHost_CL();
 #endif
@@ -329,9 +329,9 @@ inline void Matrix<T>::updateHost(bool enable) const
    /*! the m_valid logic is only implemented for CUDA backend. The OpenCL still uses the old memory management mechanism */
    if(m_valid) // if already up to date then no need to check...
       return;
-   
+
    updateHost_CU();
-   
+
    m_valid = true;
 #endif
 }
@@ -344,12 +344,12 @@ inline void Matrix<T>::invalidateDeviceData(bool enable) const
 {
 	if (!enable)
 		return;
-	
+
    /// this flag is used to track whether contents in main matrix are changed so that the contents of the
    /// transpose matrix that was taken earlier need to be updated again...
    /// normally invalidation occurs when contents are changed so good place to update this flag (?)
    m_dataChanged = true;
-   
+
 #ifdef SKEPU_OPENCL
    invalidateDeviceData_CL();
 #endif
@@ -357,7 +357,7 @@ inline void Matrix<T>::invalidateDeviceData(bool enable) const
 #ifdef SKEPU_CUDA
 //   if(m_noValidDeviceCopy)
 //       assert(m_valid);
-   
+
    if(!m_noValidDeviceCopy)
    {
       invalidateDeviceData_CU();
@@ -389,7 +389,7 @@ inline void Matrix<T>::releaseDeviceAllocations()
 
 #ifdef SKEPU_CUDA
    m_valid = true;
-   
+
    releaseDeviceAllocations_CU();
 #endif
 }

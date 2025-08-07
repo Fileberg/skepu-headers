@@ -68,7 +68,7 @@ namespace skepu
 			{
 				tuner::tune(*this, std::forward<Args>(args)...);
 			}
-			
+
 			template<typename... S>
 			void setStride(S... strides)
 			{
@@ -77,12 +77,15 @@ namespace skepu
 
 			// =======================      Call operators      ==========================
 
+
 			template<typename... CallArgs>
 			auto operator()(CallArgs&&... args) -> decltype(get<0>(std::forward<CallArgs>(args)...))
 			{
 				static_assert(sizeof...(CallArgs) == numArgs, "Number of arguments not matching Map function");
 				this->backendDispatch(
+					// 0,
 					get<0>(std::forward<CallArgs>(args)...).size() / this->m_strides[0],
+					0,
 					out_indices, elwise_indices, any_indices, const_indices,
 					std::forward<CallArgs>(args)...
 				);
@@ -91,11 +94,28 @@ namespace skepu
 
 
 			template<typename Iterator, typename... CallArgs, REQUIRES(is_skepu_iterator<Iterator, T>::value)>
+			Iterator operator()(size_t memSizeAlt, Iterator res, Iterator res_end, CallArgs&&... args)
+			{
+				static_assert(sizeof...(CallArgs) == numArgs-1, "Number of arguments not matching Map function");
+				this->backendDispatch(
+					// startIdx,
+					(res_end - res)  / this->m_strides[0],
+					memSizeAlt,
+					out_indices, elwise_indices, any_indices, const_indices,
+					res, std::forward<CallArgs>(args)...
+				);
+				return res;
+			}
+
+
+			template<typename Iterator, typename... CallArgs, REQUIRES(is_skepu_iterator<Iterator, T>::value)>
 			Iterator operator()(Iterator res, Iterator res_end, CallArgs&&... args)
 			{
 				static_assert(sizeof...(CallArgs) == numArgs-1, "Number of arguments not matching Map function");
 				this->backendDispatch(
+					// 0,
 					(res_end - res)  / this->m_strides[0],
+					0,
 					out_indices, elwise_indices, any_indices, const_indices,
 					res, std::forward<CallArgs>(args)...
 				);
@@ -121,10 +141,10 @@ namespace skepu
 #ifdef SKEPU_CUDA
 
 			template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs>
-			void CUDA(size_t startIdx, size_t size, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args);
+			void CUDA(size_t startIdx, size_t size, size_t memSizeAlt, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args);
 
 			template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename ...CallArgs>
-			void         mapSingleThread_CU(size_t deviceID, size_t startIdx, size_t size, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args);
+			void         mapSingleThread_CU(size_t deviceID, size_t startIdx, size_t size, size_t memSizeAlt, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args);
 
 			template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename ...CallArgs>
 			void          mapMultiStream_CU(size_t deviceID, size_t startIdx, size_t size, pack_indices<OI...>, pack_indices<EI...>, pack_indices<AI...>, pack_indices<CI...>, CallArgs&&... args);
@@ -156,7 +176,7 @@ namespace skepu
 #endif // SKEPU_HYBRID
 
 			template<size_t... OI, size_t... EI, size_t... AI, size_t... CI, typename... CallArgs>
-			void backendDispatch(size_t size, pack_indices<OI...> oi, pack_indices<EI...> ei, pack_indices<AI...> ai, pack_indices<CI...> ci, CallArgs&&... args)
+			void backendDispatch(size_t size, size_t memSizeAlt, pack_indices<OI...> oi, pack_indices<EI...> ei, pack_indices<AI...> ai, pack_indices<CI...> ci, CallArgs&&... args)
 			{
 			//	assert(this->m_execPlan != nullptr && this->m_execPlan->isCalibrated());
 
@@ -182,7 +202,7 @@ namespace skepu
 #endif
 				case Backend::Type::CUDA:
 #ifdef SKEPU_CUDA
-					this->CUDA(0, size, oi, ei, ai, ci,
+					this->CUDA(0, size, memSizeAlt, oi, ei, ai, ci,
 						get<OI>(std::forward<CallArgs>(args)...).begin()...,
 						get<EI>(std::forward<CallArgs>(args)...).begin()...,
 						get<AI>(std::forward<CallArgs>(args)...)...,
