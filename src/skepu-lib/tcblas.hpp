@@ -10,7 +10,7 @@
 
 // #ifndef SKEPU_PRECOMPILED
 
-// static PrecompilerMarker startOfTcblasHPP;
+// static skepu::PrecompilerMarker startOfTcblasHPP;
 
 #ifdef SKEPU_CUDA
 #include <cuda.h>
@@ -56,7 +56,8 @@ constexpr int CutlassAlignment = 4;
 
 // Uses Tensor Cores through cutlass
 template<typename TA, typename TB, typename TC>
-void gemm_tc_cutlass_fastF32(
+// void gemm_tc_cutlass_fastF32(
+void gemm(
 	blas::Op                         transA,
 	blas::Op                         transB,
 	blas::size_type                  m,
@@ -304,7 +305,8 @@ void gemm_tc_cutlass_fastF32(
 
 
 template<typename TA, typename TB, typename TC>
-void gemm_tc_cutlass_fastF32(
+// void gemm_tc_cutlass_fastF32(
+void gemm(
 	blas::Op                         transA,
 	blas::Op                         transB,
 	blas::size_type                  m,
@@ -368,7 +370,8 @@ void gemm_tc_cutlass_fastF32(
 
 
 template<typename TA, typename TX, typename TY, typename TS = blas::scalar_type<TA, TX, TY>>
-void gemv_tc_cutlass_fastF32(
+// void gemv_tc_cutlass_fastF32(
+void gemv(
 	blas::Op 	              trans,
 	blas::size_type           m,
 	blas::size_type           n,
@@ -494,7 +497,8 @@ void gemv_tc_cutlass_fastF32(
 
 
 template<typename TA, typename TX, typename TY, typename TS = blas::scalar_type<TA, TX, TY>>
-void gemv_tc_cutlass_fastF32(
+// void gemv_tc_cutlass_fastF32(
+void gemv(
 	blas::Op 	                      trans,
 	blas::size_type                   m,
 	blas::size_type                   n,
@@ -606,7 +610,8 @@ void gemv_tc_cutlass_fastF32(
 
 
 template<typename TX, typename TY>
-blas::scalar_type<TX, TY> dot_tc_cutlass_fastF32(
+// blas::scalar_type<TX, TY> dot_tc_cutlass_fastF32(
+blas::scalar_type<TX, TY> dot(
 	blas::size_type                  n,
 	Vector<TX> BLAS_CONST&           x,
 	blas::stride_type                incx,
@@ -675,7 +680,7 @@ blas::scalar_type<TX, TY> dot_tc_cutlass_fastF32(
 }
 }
 
-// static PrecompilerMarker endOfTcblasHPP;
+// static skepu::PrecompilerMarker endOfTcblasHPP;
 
 // #endif // SKEPU_PRECOMPILED
 
